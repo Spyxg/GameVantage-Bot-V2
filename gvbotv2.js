@@ -4,6 +4,8 @@ const { Client, GatewayIntentBits } = require("discord.js");
 
 const config = require("./config/config");
 
+const { updateManualStatus } = require("./services/manualStatus");
+const { getStatusData } = require("./services/statusData");
 const { syncProducts } = require("./services/statusSync");
 const { updateStatusBoard } = require("./services/statusBoard");
 const { sendAnnouncements } = require("./services/announcements");
@@ -80,19 +82,45 @@ client.on("interactionCreate", async interaction => {
 
     if (!interaction.isChatInputCommand()) return;
 
-    switch (interaction.commandName) {
+    if (interaction.commandName !== "status") return;
 
-        case "status":
+    const productId = interaction.options.getString("product");
+    const status = interaction.options.getString("status");
 
-            return interaction.reply({
+    const result = await updateManualStatus(
+        productId,
+        status
+    );
 
-                content: "✅ Status command received!",
+    if (!result.success) {
 
-                ephemeral: true
+        return interaction.reply({
 
-            });
+            content: `❌ ${result.message}`,
+
+            ephemeral: true
+
+        });
 
     }
+
+    await updateStatusBoard(
+        client,
+        getStatusData()
+    );
+
+    await sendAnnouncements(
+        client,
+        result.changes
+    );
+
+    return interaction.reply({
+
+        content: `✅ ${result.message}`,
+
+        ephemeral: true
+
+    });
 
 });
 
