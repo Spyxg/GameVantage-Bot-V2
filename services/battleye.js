@@ -1,4 +1,5 @@
 const axios = require("axios");
+const config = require("../config/config");
 
 const {
     getBattleyeProduct
@@ -6,16 +7,17 @@ const {
 
 const API_URL = "https://api.battleye.dev/v1/products";
 
+/**
+ * Fetches products from the Battleye API
+ * and converts them into GameVantage's
+ * internal product model.
+ */
 async function fetchProducts() {
 
     const response = await axios.get(API_URL, {
-
         headers: {
-
-            Authorization: `Bearer ${process.env.BATTLEYE_API_KEY}`
-
+            Authorization: `Bearer ${config.battleyeApiKey}`
         }
-
     });
 
     const apiProducts = response.data.data.products;
@@ -24,9 +26,22 @@ async function fetchProducts() {
 
     for (const apiProduct of apiProducts) {
 
+        // Find this product in our registry
         const product = getBattleyeProduct(apiProduct.product_name);
 
+        // Ignore products we don't sell
         if (!product) continue;
+
+        // Normalize Battleye status
+        let state = "updating";
+
+        if (
+            apiProduct.status === "undetected" &&
+            apiProduct.purchase_available &&
+            !apiProduct.frozen
+        ) {
+            state = "operational";
+        }
 
         products.push({
 
@@ -34,14 +49,9 @@ async function fetchProducts() {
 
             name: product.displayName,
 
-            provider: "battleye",
+            provider: product.provider,
 
-            state:
-                apiProduct.status === "undetected" &&
-                apiProduct.purchase_available &&
-                !apiProduct.frozen
-                    ? "operational"
-                    : "updating",
+            state,
 
             raw: apiProduct
 
