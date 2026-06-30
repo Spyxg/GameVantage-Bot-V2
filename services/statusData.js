@@ -1,77 +1,25 @@
 const database = require("../database/database");
 
-async function updateManualStatus(productId, newState) {
+function getStatusData() {
 
-    const product = database.getProduct(productId);
+    const products = database.getAllProducts();
 
-    if (!product) {
+    const operational = products
+        .filter(product => product.state === "operational")
+        .sort((a, b) => a.name.localeCompare(b.name));
 
-        return {
-
-            success: false,
-
-            message: "Product not found."
-
-        };
-
-    }
-
-    if (product.provider !== "manual") {
-
-        return {
-
-            success: false,
-
-            message: `${product.displayName} is managed automatically by Battleye.`
-
-        };
-
-    }
-
-    if (product.state === newState) {
-
-        return {
-
-            success: false,
-
-            message: `${product.displayName} is already ${newState}.`
-
-        };
-
-    }
-
-    const oldState = product.state;
-
-    product.state = newState;
-
-    database.saveProduct(product);
+    const updating = products
+        .filter(product => product.state === "updating")
+        .sort((a, b) => a.name.localeCompare(b.name));
 
     return {
-
-        success: true,
-
-        message: `${product.displayName} updated successfully.`,
-
-        changes: [
-
-            {
-
-                product,
-
-                oldState,
-
-                newState
-
-            }
-
-        ]
-
+        products,
+        operational,
+        updating
     };
 
 }
 
 module.exports = {
-
-    updateManualStatus
-
+    getStatusData
 };
