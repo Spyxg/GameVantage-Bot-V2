@@ -52,7 +52,7 @@ async function sendAnnouncements(client, changes) {
         await channel.send({
 
             content:
-`@everyone
+`[TEST MODE]
 
 # ${title}
 
