@@ -1,77 +1,72 @@
-const config = require("../config/config");
+const { SlashCommandBuilder } = require("discord.js");
 
-async function sendAnnouncements(client, changes) {
+module.exports = new SlashCommandBuilder()
 
-    if (!changes.length) return;
+    .setName("status")
 
-    const channel = await client.channels.fetch(
-        config.announcementChannelId
+    .setDescription("Update the status of a manual product.")
+
+    .addStringOption(option =>
+        option
+            .setName("product")
+            .setDescription("Select a manual product.")
+            .setRequired(true)
+            .addChoices(
+
+                {
+                    name: "BO7: FULL",
+                    value: "bo7-full"
+                },
+
+                {
+                    name: "SCUM: FULL",
+                    value: "scum-full"
+                },
+
+                {
+                    name: "DAYZ: FULL",
+                    value: "dayz-full"
+                },
+
+                {
+                    name: "EFT: FULL",
+                    value: "eft-full"
+                },
+
+                {
+                    name: "EFT: LITE",
+                    value: "eft-lite"
+                },
+
+                {
+                    name: "WAR THUNDER: FULL",
+                    value: "warthunder-full"
+                },
+
+                {
+                    name: "ARK: FULL",
+                    value: "ark-full"
+                }
+
+            )
+    )
+
+    .addStringOption(option =>
+        option
+            .setName("status")
+            .setDescription("Select the new status.")
+            .setRequired(true)
+            .addChoices(
+
+                {
+                    name: "🟢 Operational",
+                    value: "operational"
+                },
+
+                {
+                    name: "🔄 Updating",
+                    value: "updating"
+                }
+
+            )
     );
-
-    for (const change of changes) {
-
-        let title = "";
-        let codeblock = "";
-        let body = "";
-
-        switch (change.newState) {
-
-            case "updating":
-
-                title = `🔄 ${change.product.shortName} - Updating`;
-
-                codeblock = "text";
-
-                body =
-`Status:
-▸ A game update has been detected.
-▸ Developers are currently updating compatibility.
-▸ Subscription time has been frozen.
-▸ We'll announce when service is restored.`;
-
-                break;
-
-            case "operational":
-
-                title = `🟢 ${change.product.shortName} - Updated`;
-
-                codeblock = "diff";
-
-                body =
-`+ ${change.product.shortName} has been successfully updated to the latest version.
-+ Downtime has been compensated.
-+ Enjoy!`;
-
-                break;
-
-            default:
-                continue;
-
-        }
-
-        await channel.send({
-
-            content:
-`[TEST MODE]
-
-# ${title}
-
-\`\`\`${codeblock}
-${body}
-\`\`\``
-
-        });
-
-        console.log(
-            `[Announcement] ${change.product.displayName} → ${change.newState}`
-        );
-
-    }
-
-}
-
-module.exports = {
-
-    sendAnnouncements
-
-};
