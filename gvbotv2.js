@@ -23,7 +23,7 @@ async function runSync() {
     try {
 
         const result = await syncProducts();
-
+        
         console.log(`Products Loaded : ${result.products.length}`);
         console.log(`Changes Found   : ${result.changes.length}`);
 

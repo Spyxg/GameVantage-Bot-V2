@@ -1,5 +1,4 @@
 const config = require("../config/config");
-const templates = require("./announcementTemplates");
 
 async function sendAnnouncements(client, changes) {
 
@@ -11,16 +10,32 @@ async function sendAnnouncements(client, changes) {
 
     for (const change of changes) {
 
-        let template = null;
+        let title = "";
+        let body = "";
 
         switch (change.newState) {
 
             case "updating":
-                template = templates.updating(change.product);
+
+                title = `🔄 **${change.product.shortName} - Updating**`;
+
+                body =
+`+ A game update has been detected.
++ Developers are currently updating compatibility.
++ Subscription time has been frozen.
++ We'll announce when service is restored.`;
+
                 break;
 
             case "operational":
-                template = templates.operational(change.product);
+
+                title = `🟢 **${change.product.shortName} - Updated**`;
+
+                body =
+`+ ${change.product.shortName} has been successfully updated to the latest version.
++ Downtime has been compensated.
++ Enjoy!`;
+
                 break;
 
             default:
@@ -28,18 +43,14 @@ async function sendAnnouncements(client, changes) {
 
         }
 
-        const body = template.body
-            .map(line => `▸ ${line}`)
-            .join("\n");
-
         await channel.send({
 
             content:
 `@everyone
 
-## ${template.title}
+${title}
 
-\`\`\`text
+\`\`\`diff
 ${body}
 \`\`\``
 
