@@ -1,99 +1,50 @@
-require("dotenv").config();
+const database = require("../database/database");
 
-const { Client, GatewayIntentBits } = require("discord.js");
+async function updateManualStatus(productId, newState) {
 
-const config = require("./config/config");
+    const product = database.getProduct(productId);
 
-const { syncProducts } = require("./services/statusSync");
-const { updateStatusBoard } = require("./services/statusBoard");
-const { sendAnnouncements } = require("./services/announcements");
+    if (!product) {
+        return {
+            success: false,
+            message: "Product not found."
+        };
+    }
 
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds
-    ]
-});
+    if (product.provider !== "manual") {
+        return {
+            success: false,
+            message: `${product.displayName} is managed automatically by Battleye.`
+        };
+    }
 
-async function runSync() {
+    if (product.state === newState) {
+        return {
+            success: false,
+            message: `${product.displayName} is already ${newState}.`
+        };
+    }
 
-    console.log("");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("Starting Battleye Sync...");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    const oldState = product.state;
 
-    try {
+    product.state = newState;
 
-        const result = await syncProducts();
+    database.saveProduct(product);
 
-        console.log(`Products Loaded : ${result.products.length}`);
-        console.log(`Changes Found   : ${result.changes.length}`);
-
-        await updateStatusBoard(client, result);
-
-        await sendAnnouncements(client, result.changes);
-
-        if (result.changes.length > 0) {
-
-            console.log("");
-
-            for (const change of result.changes) {
-
-                console.log(
-                    `${change.product.displayName} | ${change.oldState} → ${change.newState}`
-                );
-
+    return {
+        success: true,
+        message: `${product.displayName} updated successfully.`,
+        changes: [
+            {
+                product,
+                oldState,
+                newState
             }
-
-        }
-
-        console.log("");
-        console.log("Battleye Sync Complete");
-        console.log("");
-
-    }
-
-    catch (err) {
-
-        console.error("");
-        console.error("Battleye Sync Failed");
-        console.error(err);
-        console.error("");
-
-    }
+        ]
+    };
 
 }
 
-client.once("clientReady", async () => {
-
-    console.log("");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log(`Logged in as ${client.user.tag}`);
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-
-    await runSync();
-
-    setInterval(runSync, 300000);
-
-});
-
-client.on("interactionCreate", async interaction => {
-
-    if (!interaction.isChatInputCommand()) return;
-
-    switch (interaction.commandName) {
-
-        case "status":
-
-            return interaction.reply({
-
-                content: "✅ Status command received!",
-
-                ephemeral: true
-
-            });
-
-    }
-
-});
-
-client.login(config.discordToken);
+module.exports = {
+    updateManualStatus
+};
