@@ -1,56 +1,60 @@
-function buildAnnouncement(change) {
+const config = require("../config/config");
+const templates = require("./announcementTemplates");
 
-    let title = "";
-    let body = "";
+async function sendAnnouncements(client, changes) {
 
-    switch (change.newState) {
+    if (!changes.length) return;
 
-        case "updating":
+    const channel = await client.channels.fetch(
+        config.announcementChannelId
+    );
 
-            title = `🟡 ${change.product.shortName} - Updating`;
+    for (const change of changes) {
 
-            body =
-`Status:
-▸ A game update has been detected.
-▸ Our developers are actively working on compatibility.
-▸ We'll announce when service is restored.`;
+        let template = null;
 
-            break;
+        switch (change.newState) {
 
-        case "operational":
+            case "updating":
+                template = templates.updating(change.product);
+                break;
 
-            title = `🟢 ${change.product.shortName} - Updated`;
+            case "operational":
+                template = templates.operational(change.product);
+                break;
 
-            body =
-`Changelog:
-▸ ${change.product.shortName} has been successfully updated to the latest version.
-▸ Downtime has been compensated.
-▸ Enjoy!`;
+            default:
+                continue;
 
-            break;
+        }
 
-        default:
-            return null;
+        const body = template.body
+            .map(line => `▸ ${line}`)
+            .join("\n");
 
-    }
+        await channel.send({
 
-    return {
-
-        content:
+            content:
 `@everyone
 
-**${title}**
+## ${template.title}
 
 \`\`\`text
 ${body}
 \`\`\``
 
-    };
+        });
+
+        console.log(
+            `Announcement sent: ${change.product.displayName}`
+        );
+
+    }
 
 }
 
 module.exports = {
 
-    buildAnnouncement
+    sendAnnouncements
 
 };

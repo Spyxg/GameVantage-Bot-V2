@@ -3,7 +3,7 @@ require("dotenv").config();
 const { Client, GatewayIntentBits } = require("discord.js");
 
 const config = require("./config/config");
-
+const { sendAnnouncements } = require("./services/announcements");
 const { syncProducts } = require("./services/statusSync");
 const { updateStatusBoard } = require("./services/statusBoard");
 
@@ -28,6 +28,7 @@ async function runSync() {
         console.log(`Changes Found   : ${result.changes.length}`);
 
         await updateStatusBoard(client, result);
+        await sendAnnouncements(client, result.changes);
 
         if (result.changes.length > 0) {
 
