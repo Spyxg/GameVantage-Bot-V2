@@ -159,11 +159,10 @@ function getManualProducts() {
 }
 
 module.exports = {
-
+    PRODUCTS,
     getProducts,
     getProduct,
     getBattleyeProduct,
     getBattleyeProducts,
     getManualProducts
-
 };
