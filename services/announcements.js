@@ -53,7 +53,7 @@ async function sendAnnouncements(client, changes) {
 
 content:
 `TEST TEST
-${title}
+# ${title}
 
 \`\`\`${codeblock}
 ${body}
