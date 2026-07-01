@@ -14,8 +14,8 @@ async function updateManualStatus(productId, newState) {
     }
 
     const product = {
-        ...dbProduct,
-        ...registryProduct
+        ...registryProduct,
+        state: dbProduct.state
     };
 
     if (product.provider !== "manual") {
