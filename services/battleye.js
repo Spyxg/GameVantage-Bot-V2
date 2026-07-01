@@ -43,19 +43,23 @@ async function fetchProducts() {
             state = "operational";
         }
 
-        products.push({
+products.push({
 
-            id: product.id,
+    id: product.id,
 
-            name: product.displayName,
+    name: product.displayName,
 
-            provider: product.provider,
+    displayName: product.displayName,
 
-            state,
+    shortName: product.shortName,
 
-            raw: apiProduct
+    provider: product.provider,
 
-        });
+    state,
+
+    raw: apiProduct
+
+});
 
     }
 
