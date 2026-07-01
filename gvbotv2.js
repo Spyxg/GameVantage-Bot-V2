@@ -4,11 +4,11 @@ const { Client, GatewayIntentBits } = require("discord.js");
 
 const config = require("./config/config");
 
-const { updateManualStatus } = require("./services/manualStatus");
-const { getStatusData } = require("./services/statusData");
 const { syncProducts } = require("./services/statusSync");
 const { updateStatusBoard } = require("./services/statusBoard");
 const { sendAnnouncements } = require("./services/announcements");
+const { updateManualStatus } = require("./services/manualStatus");
+const { getStatusData } = require("./services/statusData");
 
 const client = new Client({
     intents: [
@@ -16,7 +16,7 @@ const client = new Client({
     ]
 });
 
-async function runSync() {
+async function runSync(sendAlerts = true) {
 
     console.log("");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -32,7 +32,14 @@ async function runSync() {
 
         await updateStatusBoard(client, result);
 
-        await sendAnnouncements(client, result.changes);
+        if (sendAlerts && result.changes.length > 0) {
+
+            await sendAnnouncements(
+                client,
+                result.changes
+            );
+
+        }
 
         if (result.changes.length > 0) {
 
@@ -41,7 +48,7 @@ async function runSync() {
             for (const change of result.changes) {
 
                 console.log(
-                    `${change.product.displayName} | ${change.oldState} → ${change.newState}`
+                    `${change.product.displayName} | ${change.oldState} -> ${change.newState}`
                 );
 
             }
@@ -72,9 +79,20 @@ client.once("clientReady", async () => {
     console.log(`Logged in as ${client.user.tag}`);
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-    await runSync();
+    //
+    // IMPORTANT
+    // Startup sync should NEVER send announcements.
+    //
+    await runSync(false);
 
-    setInterval(runSync, 300000);
+    //
+    // Future syncs DO send announcements.
+    //
+    setInterval(() => {
+
+        runSync(true);
+
+    }, 300000);
 
 });
 
@@ -84,19 +102,41 @@ client.on("interactionCreate", async interaction => {
 
     if (interaction.commandName !== "status") return;
 
-    const productId = interaction.options.getString("product");
-    const status = interaction.options.getString("status");
+    try {
 
-    const result = await updateManualStatus(
-        productId,
-        status
-    );
+        const productId = interaction.options.getString("product");
+        const status = interaction.options.getString("status");
 
-    if (!result.success) {
+        const result = await updateManualStatus(
+            productId,
+            status
+        );
+
+        if (!result.success) {
+
+            return interaction.reply({
+
+                content: `❌ ${result.message}`,
+
+                ephemeral: true
+
+            });
+
+        }
+
+        await updateStatusBoard(
+            client,
+            getStatusData()
+        );
+
+        await sendAnnouncements(
+            client,
+            result.changes
+        );
 
         return interaction.reply({
 
-            content: `❌ ${result.message}`,
+            content: `✅ ${result.message}`,
 
             ephemeral: true
 
@@ -104,23 +144,23 @@ client.on("interactionCreate", async interaction => {
 
     }
 
-    await updateStatusBoard(
-        client,
-        getStatusData()
-    );
+    catch (err) {
 
-    await sendAnnouncements(
-        client,
-        result.changes
-    );
+        console.error(err);
 
-    return interaction.reply({
+        if (!interaction.replied) {
 
-        content: `✅ ${result.message}`,
+            return interaction.reply({
 
-        ephemeral: true
+                content: "❌ An unexpected error occurred.",
 
-    });
+                ephemeral: true
+
+            });
+
+        }
+
+    }
 
 });
 
