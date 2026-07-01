@@ -51,10 +51,9 @@ async function sendAnnouncements(client, changes) {
 
         await channel.send({
 
-            content:
-`@everyone
-
-# ${title}
+content:
+`TEST TEST
+${title}
 
 \`\`\`${codeblock}
 ${body}
