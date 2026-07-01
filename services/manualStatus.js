@@ -1,22 +1,22 @@
 const database = require("../database/database");
-const { getProductById } = require("./products");
+const { getProduct } = require("./products");
 
 async function updateManualStatus(productId, newState) {
 
-    const product = database.getProduct(productId);
+    const dbProduct = database.getProduct(productId);
+    const registryProduct = getProduct(productId);
 
-    const registryProduct = getProductById(productId);
-
-if (registryProduct) {
-    product.shortName = registryProduct.shortName;
-}
-
-    if (!product) {
+    if (!dbProduct || !registryProduct) {
         return {
             success: false,
             message: "Product not found."
         };
     }
+
+    const product = {
+        ...dbProduct,
+        ...registryProduct
+    };
 
     if (product.provider !== "manual") {
         return {
@@ -34,16 +34,22 @@ if (registryProduct) {
 
     const oldState = product.state;
 
-    product.state = newState;
-
-    database.saveProduct(product);
+    database.saveProduct({
+        id: product.id,
+        name: product.displayName,
+        provider: product.provider,
+        state: newState
+    });
 
     return {
         success: true,
         message: `${product.displayName} updated successfully.`,
         changes: [
             {
-                product,
+                product: {
+                    ...product,
+                    state: newState
+                },
                 oldState,
                 newState
             }
